@@ -7,7 +7,8 @@ process.CondDB.connect = cms.string('sqlite_file:testExample.db')
 
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2018_realistic_v11_L1v1')
+#process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2018_realistic_v11_L1v1')
+process.GlobalTag = GlobalTag(process.GlobalTag, '106X_dataRun2_v28')
 
 #process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
