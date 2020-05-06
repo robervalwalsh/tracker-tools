@@ -5,10 +5,13 @@
 //
 /**\class SiStripsLorentaAnglePayload SiStripsLorentaAnglePayload.cc Tracker/Tools/plugins/SiStripsLorentaAnglePayload.cc
 
- Description: [one line class summary]
+ Description: Put the values of the Lorentz angle for each strip detId in as database file
 
  Implementation:
      [Notes on implementation]
+     
+ Useful links:
+    http://cmsdoxygen.web.cern.ch/cmsdoxygen/CMSSW_10_6_12/doc/html/dc/d4f/classSiStripLorentzAngle.html
 */
 //
 // Original Author:  Roberval Walsh
@@ -31,6 +34,12 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
+
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CondCore/DBOutputService/interface/PoolDBOutputService.h"
+
+#include "CondFormats/SiStripObjects/interface/SiStripLorentzAngle.h"
+
 //
 // class declaration
 //
@@ -41,7 +50,8 @@
 // This will improve performance in multithreaded jobs.
 
 
-class SiStripsLorentaAnglePayload : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class SiStripsLorentaAnglePayload : public edm::one::EDAnalyzer<edm::one::SharedResources>
+{
    public:
       explicit SiStripsLorentaAnglePayload(const edm::ParameterSet&);
       ~SiStripsLorentaAnglePayload();
@@ -91,7 +101,22 @@ void
 SiStripsLorentaAnglePayload::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
-
+   std::cout << "SiStripsLorentaAnglePayload::analyze " << std::endl;
+   
+   // Database service
+   edm::Service<cond::service::PoolDBOutputService> mydbservice;
+   if ( ! mydbservice.isAvailable() )
+   {
+      std::cout << "Service is unavailable" << std::endl;
+      return;
+   }      
+   std::string tag = mydbservice->tag(m_record);
+   unsigned int irun = iEvent.id().run();
+   std::cout << "tag :" << tag << std::endl;
+   std::cout << "run :" << irun << std::endl;
+   
+   // SiStripLorentzAngle object
+   SiStripLorentzAngle * la = new SiStripLorentzAngle();
 }
 
 
