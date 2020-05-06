@@ -111,8 +111,8 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    std::cout << "SiStripsLorentzAnglePayload::analyze " << std::endl;
    
    //// Database services (read from GT)
-//    edm::ESHandle<TrackerGeometry> theTrackerGeometry;
-//    iSetup.get<TrackerDigiGeometryRecord>().get( theTrackerGeometry ); 
+//    edm::ESHandle<TrackerGeometry> es_TrackerGeometry;
+//    iSetup.get<TrackerDigiGeometryRecord>().get( es_TrackerGeometry ); 
    edm::ESHandle<SiStripLorentzAngle> es_SiStripLorentzAngle;
    iSetup.get<SiStripLorentzAngleDepRcd>().get(es_SiStripLorentzAngle);      
    
@@ -131,14 +131,18 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    // Strips detectors
    std::map< unsigned int, float > detsLAFromDB = es_SiStripLorentzAngle -> getLorentzAngles();
    
-   for ( auto detLA : detsLAFromDB )
-   {
-      std::cout << "detId " << detLA.first << " has LA = " << detLA.second << std::endl;
-   }
+//    for ( auto detLA : detsLAFromDB )
+//    {
+//       std::cout << "detId " << detLA.first << " has LA = " << detLA.second << std::endl;
+//    }
    
    
    // SiStripLorentzAngle object
    SiStripLorentzAngle * lorentzAngle = new SiStripLorentzAngle();
+   lorentzAngle -> putLorentsAngles(detsLAFromDB );
+   std::cout<<"currentTime "<<mydbservice->currentTime()<<std::endl;
+   mydbservice->writeOne(lorentzAngle,mydbservice->currentTime(),m_record,false);
+   
 }
 
 
