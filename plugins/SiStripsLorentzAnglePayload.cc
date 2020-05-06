@@ -111,8 +111,8 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    std::cout << "SiStripsLorentzAnglePayload::analyze " << std::endl;
    
    //// Database services (read from GT)
-   edm::ESHandle<TrackerGeometry> theTrackerGeometry;
-   iSetup.get<TrackerDigiGeometryRecord>().get( theTrackerGeometry ); 
+//    edm::ESHandle<TrackerGeometry> theTrackerGeometry;
+//    iSetup.get<TrackerDigiGeometryRecord>().get( theTrackerGeometry ); 
    edm::ESHandle<SiStripLorentzAngle> es_SiStripLorentzAngle;
    iSetup.get<SiStripLorentzAngleDepRcd>().get(es_SiStripLorentzAngle);      
    
