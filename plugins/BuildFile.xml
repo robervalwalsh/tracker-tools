@@ -3,5 +3,10 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/ServiceRegistry"/>
 <use name="CondCore/DBOutputService"/>
+<use name="CondFormats/DataRecord"/>
 <use name="CondFormats/SiStripObjects"/>
+<use name="Geometry/Records"/>
+<use name="Geometry/TrackerGeometryBuilder"/>
+<use name="CalibTracker/Records"/>
+<use name="Tracker/Tools"/>
 <flags EDM_PLUGIN="1"/>
