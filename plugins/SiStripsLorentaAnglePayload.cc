@@ -19,6 +19,8 @@
 
 // system include files
 #include <memory>
+#include <iostream>
+#include <string>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -28,9 +30,7 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
- #include "FWCore/Utilities/interface/InputTag.h"
- #include "DataFormats/TrackReco/interface/Track.h"
- #include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "FWCore/Utilities/interface/InputTag.h"
 //
 // class declaration
 //
@@ -40,8 +40,6 @@
 // from  edm::one::EDAnalyzer<>
 // This will improve performance in multithreaded jobs.
 
-
-using reco::TrackCollection;
 
 class SiStripsLorentaAnglePayload : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
    public:
@@ -57,7 +55,7 @@ class SiStripsLorentaAnglePayload : public edm::one::EDAnalyzer<edm::one::Shared
       virtual void endJob() override;
 
       // ----------member data ---------------------------
-      edm::EDGetTokenT<TrackCollection> tracksToken_;  //used to select what tracks to read from configuration file
+      std::string m_record;
 };
 
 //
@@ -72,21 +70,15 @@ class SiStripsLorentaAnglePayload : public edm::one::EDAnalyzer<edm::one::Shared
 // constructors and destructor
 //
 SiStripsLorentaAnglePayload::SiStripsLorentaAnglePayload(const edm::ParameterSet& iConfig)
- :
-  tracksToken_(consumes<TrackCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tracks")))
-
+   : m_record(iConfig.getParameter<std::string>("record"))
 {
-   //now do what ever initialization is needed
-
+   std::cout << "SiStripsLorentaAnglePayload::SiStripsLorentaAnglePayload" << std::endl;
 }
 
 
 SiStripsLorentaAnglePayload::~SiStripsLorentaAnglePayload()
 {
-
-   // do anything here that needs to be done at desctruction time
-   // (e.g. close files, deallocate resources etc.)
-
+   std::cout << "SiStripsLorentaAnglePayload::~SiStripsLorentaAnglePayload" << std::endl;
 }
 
 
@@ -100,15 +92,6 @@ SiStripsLorentaAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
 {
    using namespace edm;
 
-   for(const auto& track : iEvent.get(tracksToken_) ) {
-      // do something with track parameters, e.g, plot the charge.
-      // int charge = track.charge();
-   }
-
-#ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
-   ESHandle<SetupData> pSetup;
-   iSetup.get<SetupRecord>().get(pSetup);
-#endif
 }
 
 
