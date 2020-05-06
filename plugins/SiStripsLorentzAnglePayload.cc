@@ -3,7 +3,7 @@
 // Package:    Tracker/Tools
 // Class:      Tools
 //
-/**\class SiStripsLorentaAnglePayload SiStripsLorentaAnglePayload.cc Tracker/Tools/plugins/SiStripsLorentaAnglePayload.cc
+/**\class SiStripsLorentzAnglePayload SiStripsLorentzAnglePayload.cc Tracker/Tools/plugins/SiStripsLorentzAnglePayload.cc
 
  Description: Put the values of the Lorentz angle for each strip detId in as database file
 
@@ -38,6 +38,13 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CondCore/DBOutputService/interface/PoolDBOutputService.h"
 
+#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
+#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
+
+
+#include "CalibTracker/Records/interface/SiStripDependentRecords.h"
+#include "CondFormats/DataRecord/interface/SiStripLorentzAngleRcd.h"
 #include "CondFormats/SiStripObjects/interface/SiStripLorentzAngle.h"
 
 //
@@ -50,11 +57,11 @@
 // This will improve performance in multithreaded jobs.
 
 
-class SiStripsLorentaAnglePayload : public edm::one::EDAnalyzer<edm::one::SharedResources>
+class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
 {
    public:
-      explicit SiStripsLorentaAnglePayload(const edm::ParameterSet&);
-      ~SiStripsLorentaAnglePayload();
+      explicit SiStripsLorentzAnglePayload(const edm::ParameterSet&);
+      ~SiStripsLorentzAnglePayload();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -79,16 +86,16 @@ class SiStripsLorentaAnglePayload : public edm::one::EDAnalyzer<edm::one::Shared
 //
 // constructors and destructor
 //
-SiStripsLorentaAnglePayload::SiStripsLorentaAnglePayload(const edm::ParameterSet& iConfig)
+SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload(const edm::ParameterSet& iConfig)
    : m_record(iConfig.getParameter<std::string>("record"))
 {
-   std::cout << "SiStripsLorentaAnglePayload::SiStripsLorentaAnglePayload" << std::endl;
+   std::cout << "SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload" << std::endl;
 }
 
 
-SiStripsLorentaAnglePayload::~SiStripsLorentaAnglePayload()
+SiStripsLorentzAnglePayload::~SiStripsLorentzAnglePayload()
 {
-   std::cout << "SiStripsLorentaAnglePayload::~SiStripsLorentaAnglePayload" << std::endl;
+   std::cout << "SiStripsLorentzAnglePayload::~SiStripsLorentzAnglePayload" << std::endl;
 }
 
 
@@ -98,12 +105,18 @@ SiStripsLorentaAnglePayload::~SiStripsLorentaAnglePayload()
 
 // ------------ method called for each event  ------------
 void
-SiStripsLorentaAnglePayload::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
-   std::cout << "SiStripsLorentaAnglePayload::analyze " << std::endl;
+   std::cout << "SiStripsLorentzAnglePayload::analyze " << std::endl;
    
-   // Database service
+   //// Database services (read from GT)
+   edm::ESHandle<TrackerGeometry> theTrackerGeometry;
+   iSetup.get<TrackerDigiGeometryRecord>().get( theTrackerGeometry ); 
+   edm::ESHandle<SiStripLorentzAngle> es_SiStripLorentzAngle;
+   iSetup.get<SiStripLorentzAngleDepRcd>().get(es_SiStripLorentzAngle);      
+   
+   // Database services (write)
    edm::Service<cond::service::PoolDBOutputService> mydbservice;
    if ( ! mydbservice.isAvailable() )
    {
@@ -115,26 +128,35 @@ SiStripsLorentaAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    std::cout << "tag :" << tag << std::endl;
    std::cout << "run :" << irun << std::endl;
    
+   // Strips detectors
+   std::map< unsigned int, float > detsLAFromDB = es_SiStripLorentzAngle -> getLorentzAngles();
+   
+   for ( auto detLA : detsLAFromDB )
+   {
+      std::cout << "detId " << detLA.first << " has LA = " << detLA.second << std::endl;
+   }
+   
+   
    // SiStripLorentzAngle object
-   SiStripLorentzAngle * la = new SiStripLorentzAngle();
+   SiStripLorentzAngle * lorentzAngle = new SiStripLorentzAngle();
 }
 
 
 // ------------ method called once each job just before starting event loop  ------------
 void
-SiStripsLorentaAnglePayload::beginJob()
+SiStripsLorentzAnglePayload::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void
-SiStripsLorentaAnglePayload::endJob()
+SiStripsLorentzAnglePayload::endJob()
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-SiStripsLorentaAnglePayload::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+SiStripsLorentzAnglePayload::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -149,4 +171,4 @@ SiStripsLorentaAnglePayload::fillDescriptions(edm::ConfigurationDescriptions& de
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(SiStripsLorentaAnglePayload);
+DEFINE_FWK_MODULE(SiStripsLorentzAnglePayload);
