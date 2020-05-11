@@ -25,13 +25,13 @@ process.PoolDBOutputService = cms.Service("PoolDBOutputService",
     timetype = cms.untracked.string('Run'),
     toPut = cms.VPSet(cms.PSet(
         record = cms.string('SiStripsLorentzAngleRcd'),
-        tag = cms.string('mytest_example')
+        tag = cms.string('SiStripsLorentzAngle_Run2_2018D')
     ))
 )
 
-process.mytest = cms.EDAnalyzer("SiStripsLorentzAnglePayload",
-    record = cms.string('SiStripsLorentzAngleRcd')
-)
+from Tracker.Tools.SiStripsLorentzAnglePayload_cfi import LAPayload
+process.LAPayload = LAPayload
+process.LAPayload.TOB_L1a = cms.double(0.01)
 
-process.p = cms.Path(process.mytest)
+process.p = cms.Path(process.LAPayload)
 

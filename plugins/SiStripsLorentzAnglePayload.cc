@@ -24,6 +24,7 @@
 #include <memory>
 #include <iostream>
 #include <string>
+#include <map>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -73,6 +74,23 @@ class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
 
       // ----------member data ---------------------------
       std::string m_record;
+      double la_tib_l1a;
+      double la_tib_l1s;
+      double la_tib_l2a;
+      double la_tib_l2s;
+      double la_tib_l3a;
+      double la_tib_l4a;
+      double la_tob_l1a;
+      double la_tob_l1s;
+      double la_tob_l2a;
+      double la_tob_l2s;
+      double la_tob_l3a;
+      double la_tob_l4a;
+      double la_tob_l5a;
+      double la_tob_l6a;
+      
+      std::map<std::string,double> la_layers;
+      std::map<std::string,bool> la_layers_change;
 };
 
 //
@@ -87,9 +105,53 @@ class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
 // constructors and destructor
 //
 SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload(const edm::ParameterSet& iConfig)
-   : m_record(iConfig.getParameter<std::string>("record"))
+   : m_record(iConfig.getParameter<std::string>("record")),
+     la_tib_l1a(iConfig.getParameter<double>("TIB_L1a")),
+     la_tib_l1s(iConfig.getParameter<double>("TIB_L1s")),
+     la_tib_l2a(iConfig.getParameter<double>("TIB_L2a")),
+     la_tib_l2s(iConfig.getParameter<double>("TIB_L2s")),
+     la_tib_l3a(iConfig.getParameter<double>("TIB_L3a")),
+     la_tib_l4a(iConfig.getParameter<double>("TIB_L4a")),
+     la_tob_l1a(iConfig.getParameter<double>("TOB_L1a")),
+     la_tob_l1s(iConfig.getParameter<double>("TOB_L1s")),
+     la_tob_l2a(iConfig.getParameter<double>("TOB_L2a")),
+     la_tob_l2s(iConfig.getParameter<double>("TOB_L2s")),
+     la_tob_l3a(iConfig.getParameter<double>("TOB_L3a")),
+     la_tob_l4a(iConfig.getParameter<double>("TOB_L4a")),
+     la_tob_l5a(iConfig.getParameter<double>("TOB_L5a")),
+     la_tob_l6a(iConfig.getParameter<double>("TOB_L6a"))
 {
    std::cout << "SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload" << std::endl;
+       
+   la_layers["TIB_L1a"] = la_tib_l1a;
+   la_layers["TIB_L1s"] = la_tib_l1s;
+   la_layers["TIB_L2a"] = la_tib_l2a;
+   la_layers["TIB_L2s"] = la_tib_l2s;
+   la_layers["TIB_L3a"] = la_tib_l3a;
+   la_layers["TIB_L4a"] = la_tib_l4a;
+   la_layers["TOB_L1a"] = la_tob_l1a;
+   la_layers["TOB_L1s"] = la_tob_l1s;
+   la_layers["TOB_L2a"] = la_tob_l2a;
+   la_layers["TOB_L2s"] = la_tob_l2s;
+   la_layers["TOB_L3a"] = la_tob_l3a;
+   la_layers["TOB_L4a"] = la_tob_l4a;
+   la_layers["TOB_L5a"] = la_tob_l5a;
+   la_layers["TOB_L6a"] = la_tob_l6a;
+   
+         
+   for (auto& [key, value]: la_layers)
+   {
+      if ( value < -10 ) // no change for the layer
+      {
+         la_layers_change[key] = false;
+      }
+      else
+      {
+         la_layers_change[key] = true;
+         std::cout << "-> Lorentz angle for " << key << " will change to " << value << std::endl;
+      }
+   }
+   std::cout << "-----------\n" << std::endl;
 }
 
 
@@ -111,8 +173,6 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    std::cout << "SiStripsLorentzAnglePayload::analyze " << std::endl;
    
    //// Database services (read from GT)
-//    edm::ESHandle<TrackerGeometry> es_TrackerGeometry;
-//    iSetup.get<TrackerDigiGeometryRecord>().get( es_TrackerGeometry ); 
    edm::ESHandle<SiStripLorentzAngle> es_SiStripLorentzAngle;
    iSetup.get<SiStripLorentzAngleDepRcd>().get(es_SiStripLorentzAngle);      
    
@@ -130,13 +190,7 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    
    // Strips detectors
    std::map< unsigned int, float > detsLAFromDB = es_SiStripLorentzAngle -> getLorentzAngles();
-   
-//    for ( auto detLA : detsLAFromDB )
-//    {
-//       std::cout << "detId " << detLA.first << " has LA = " << detLA.second << std::endl;
-//    }
-   
-   
+      
    // SiStripLorentzAngle object
    SiStripLorentzAngle * lorentzAngle = new SiStripLorentzAngle();
    lorentzAngle -> putLorentsAngles(detsLAFromDB );
@@ -163,15 +217,27 @@ void
 SiStripsLorentzAnglePayload::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
-  edm::ParameterSetDescription desc;
-  desc.setUnknown();
-  descriptions.addDefault(desc);
+//   edm::ParameterSetDescription desc;
+//   desc.setUnknown();
+//   descriptions.addDefault(desc);
 
-  //Specify that only 'tracks' is allowed
-  //To use, remove the default given above and uncomment below
-  //ParameterSetDescription desc;
-  //desc.addUntracked<edm::InputTag>("tracks","ctfWithMaterialTracks");
-  //descriptions.addDefault(desc);
+    edm::ParameterSetDescription desc;
+    desc.add<std::string>("record","SiStripsLorentzAngleRcd");
+    desc.add<double>("TIB_L1a",-1000);
+    desc.add<double>("TIB_L1s",-1000);
+    desc.add<double>("TIB_L2a",-1000);
+    desc.add<double>("TIB_L2s",-1000);
+    desc.add<double>("TIB_L3a",-1000);
+    desc.add<double>("TIB_L4a",-1000);
+    desc.add<double>("TOB_L1a",-1000);
+    desc.add<double>("TOB_L1s",-1000);
+    desc.add<double>("TOB_L2a",-1000);
+    desc.add<double>("TOB_L2s",-1000);
+    desc.add<double>("TOB_L3a",-1000);
+    desc.add<double>("TOB_L4a",-1000);
+    desc.add<double>("TOB_L5a",-1000);
+    desc.add<double>("TOB_L6a",-1000);
+    descriptions.addDefault(desc);
 }
 
 //define this as a plug-in
