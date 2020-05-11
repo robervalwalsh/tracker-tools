@@ -48,6 +48,9 @@
 #include "CondFormats/DataRecord/interface/SiStripLorentzAngleRcd.h"
 #include "CondFormats/SiStripObjects/interface/SiStripLorentzAngle.h"
 
+#include "DataFormats/SiStripDetId/interface/SiStripDetId.h"
+#include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
+
 //
 // class declaration
 //
@@ -91,6 +94,8 @@ class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
       
       std::map<std::string,double> la_layers;
       std::map<std::string,bool> la_layers_change;
+      
+      std::map<int,std::string> subdets;
 };
 
 //
@@ -152,6 +157,11 @@ SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload(const edm::ParameterSet
       }
    }
    std::cout << "-----------\n" << std::endl;
+         
+   subdets[SiStripDetId::SubDetector::TIB] = "TIB";
+   subdets[SiStripDetId::SubDetector::TOB] = "TOB";
+   subdets[SiStripDetId::SubDetector::TID] = "TID";
+   subdets[SiStripDetId::SubDetector::TEC] = "TEC";
 }
 
 
@@ -171,6 +181,11 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
 {
    using namespace edm;
    std::cout << "SiStripsLorentzAnglePayload::analyze " << std::endl;
+    
+   // see https://github.com/cms-sw/cmssw/blob/master/DataFormats/SiStripDetId/interface/SiStripDetId.h
+   static const unsigned layerStartBit = 14;
+   static const unsigned layerMask = 0x7;
+
    
    //// Database services (read from GT)
    edm::ESHandle<SiStripLorentzAngle> es_SiStripLorentzAngle;
@@ -190,6 +205,29 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    
    // Strips detectors
    std::map< unsigned int, float > detsLAFromDB = es_SiStripLorentzAngle -> getLorentzAngles();
+   auto new_detsLAFromDB = detsLAFromDB;
+    
+   for ( auto [mod, la] : detsLAFromDB )
+   {
+      SiStripDetId detid(mod);
+      std::string subdet = subdets[detid.subDetector()];
+      if ( subdet != "TIB" && subdet != "TOB" ) continue;
+      std::string type  = (detid.stereo() ? "s": "a");
+      auto layer =  int((detid.rawId() >> layerStartBit) & layerMask);    // see https://github.com/robervalwalsh/tracker-la/blob/develop/TIBDetId.h
+      std::string det = subdet+"_L"+std::to_string(layer)+type;
+      std::cout << "detId " << mod << "  " << det << " LA value = ";
+      if ( la_layers_change[det] )
+      {
+         new_detsLAFromDB[mod] = la_layers[det];
+         std::cout << la_layers[det] << "  NEW!!! " << std::endl; 
+      }
+      else
+      {
+         std::cout << la << std::endl; 
+      }
+   }
+   
+    
       
    // SiStripLorentzAngle object
    SiStripLorentzAngle * lorentzAngle = new SiStripLorentzAngle();

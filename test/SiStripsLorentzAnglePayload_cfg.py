@@ -2,8 +2,14 @@ import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("TEST")
 
+tag = 'SiStripsLorentzAngle'
+suffix = '_Run2_2018D'
+#suffix = ''
+
+outdb = 'sqlite_file:SiStripsLorentzAngle'+suffix+'.db'
+
 process.load("CondCore.CondDB.CondDB_cfi")
-process.CondDB.connect = cms.string('sqlite_file:testExample.db')
+process.CondDB.connect = cms.string(outdb)
 
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
@@ -25,13 +31,26 @@ process.PoolDBOutputService = cms.Service("PoolDBOutputService",
     timetype = cms.untracked.string('Run'),
     toPut = cms.VPSet(cms.PSet(
         record = cms.string('SiStripsLorentzAngleRcd'),
-        tag = cms.string('SiStripsLorentzAngle_Run2_2018D')
+        tag = cms.string('SiStripsLorentzAngle')
     ))
 )
 
 from Tracker.Tools.SiStripsLorentzAnglePayload_cfi import LAPayload
 process.LAPayload = LAPayload
-process.LAPayload.TOB_L1a = cms.double(0.01)
+process.LAPayload.TIB_L1a = cms.double(0.01958)
+process.LAPayload.TIB_L1s = cms.double(0.02261)
+process.LAPayload.TIB_L2a = cms.double(0.01997)
+process.LAPayload.TIB_L2s = cms.double(0.02148)
+process.LAPayload.TIB_L3a = cms.double(0.02133)
+process.LAPayload.TIB_L4a = cms.double(0.02324)
+process.LAPayload.TOB_L1a = cms.double(0.02261)
+process.LAPayload.TOB_L1s = cms.double(0.01998)
+process.LAPayload.TOB_L2a = cms.double(0.01945)
+process.LAPayload.TOB_L2s = cms.double(0.02145)
+process.LAPayload.TOB_L3a = cms.double(0.02010)
+process.LAPayload.TOB_L4a = cms.double(0.01838)
+process.LAPayload.TOB_L5a = cms.double(0.02037)
+process.LAPayload.TOB_L6a = cms.double(0.02025)
 
 process.p = cms.Path(process.LAPayload)
 
