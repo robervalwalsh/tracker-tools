@@ -77,6 +77,8 @@ class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
 
       // ----------member data ---------------------------
       std::string m_record;
+      std::string m_tag;
+      std::string m_label;
       double la_tib_l1a;
       double la_tib_l1s;
       double la_tib_l2a;
@@ -111,6 +113,8 @@ class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
 //
 SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload(const edm::ParameterSet& iConfig)
    : m_record(iConfig.getParameter<std::string>("record")),
+     m_tag(iConfig.getParameter<std::string>("tag")),
+     m_label(iConfig.getParameter<std::string>("label")),
      la_tib_l1a(iConfig.getParameter<double>("TIB_L1a")),
      la_tib_l1s(iConfig.getParameter<double>("TIB_L1s")),
      la_tib_l2a(iConfig.getParameter<double>("TIB_L2a")),
@@ -189,7 +193,7 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    
    //// Database services (read from GT)
    edm::ESHandle<SiStripLorentzAngle> es_SiStripLorentzAngle;
-   iSetup.get<SiStripLorentzAngleDepRcd>().get(es_SiStripLorentzAngle);      
+   iSetup.get<SiStripLorentzAngleRcd>().get("deconvolution",es_SiStripLorentzAngle);      
    
    // Database services (write)
    edm::Service<cond::service::PoolDBOutputService> mydbservice;
@@ -200,8 +204,8 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    }      
    std::string tag = mydbservice->tag(m_record);
    unsigned int irun = iEvent.id().run();
-   std::cout << "tag :" << tag << std::endl;
-   std::cout << "run :" << irun << std::endl;
+   std::cout << "tag : " << tag << std::endl;
+   std::cout << "run : " << irun << std::endl;
    
    // Strips detectors
    std::map< unsigned int, float > detsLAFromDB = es_SiStripLorentzAngle -> getLorentzAngles();
@@ -231,7 +235,7 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
       
    // SiStripLorentzAngle object
    SiStripLorentzAngle * lorentzAngle = new SiStripLorentzAngle();
-   lorentzAngle -> putLorentsAngles(detsLAFromDB );
+   lorentzAngle -> putLorentsAngles(new_detsLAFromDB);
    std::cout<<"currentTime "<<mydbservice->currentTime()<<std::endl;
    mydbservice->writeOne(lorentzAngle,mydbservice->currentTime(),m_record,false);
    
@@ -261,6 +265,8 @@ SiStripsLorentzAnglePayload::fillDescriptions(edm::ConfigurationDescriptions& de
 
     edm::ParameterSetDescription desc;
     desc.add<std::string>("record","SiStripsLorentzAngleRcd");
+    desc.add<std::string>("tag","SiStripsLorentzAngle");
+    desc.add<std::string>("label","deconvolution");
     desc.add<double>("TIB_L1a",-1000);
     desc.add<double>("TIB_L1s",-1000);
     desc.add<double>("TIB_L2a",-1000);
