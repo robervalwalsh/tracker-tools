@@ -79,6 +79,8 @@ class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
       std::string m_record;
       std::string m_tag;
       std::string m_label;
+      std::string m_mode;
+      std::string m_db;
       double la_tib_l1a;
       double la_tib_l1s;
       double la_tib_l2a;
@@ -115,6 +117,8 @@ SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload(const edm::ParameterSet
    : m_record(iConfig.getParameter<std::string>("record")),
      m_tag(iConfig.getParameter<std::string>("tag")),
      m_label(iConfig.getParameter<std::string>("label")),
+     m_mode(iConfig.getParameter<std::string>("mode")),
+     m_db(iConfig.getParameter<std::string>("db")),
      la_tib_l1a(iConfig.getParameter<double>("TIB_L1a")),
      la_tib_l1s(iConfig.getParameter<double>("TIB_L1s")),
      la_tib_l2a(iConfig.getParameter<double>("TIB_L2a")),
@@ -150,7 +154,7 @@ SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload(const edm::ParameterSet
          
    for (auto& [key, value]: la_layers)
    {
-      if ( value < -10 ) // no change for the layer
+      if ( value < -10 || m_mode == "read" ) // no change for the layer
       {
          la_layers_change[key] = false;
       }
@@ -193,19 +197,12 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
    
    //// Database services (read from GT)
    edm::ESHandle<SiStripLorentzAngle> es_SiStripLorentzAngle;
-   iSetup.get<SiStripLorentzAngleRcd>().get("deconvolution",es_SiStripLorentzAngle);      
+   if ( m_db == "gt" )
+      iSetup.get<SiStripLorentzAngleRcd>().get("deconvolution",es_SiStripLorentzAngle);
+   else
+      iSetup.get<SiStripLorentzAngleRcd>().get(es_SiStripLorentzAngle);
+           
    
-   // Database services (write)
-   edm::Service<cond::service::PoolDBOutputService> mydbservice;
-   if ( ! mydbservice.isAvailable() )
-   {
-      std::cout << "Service is unavailable" << std::endl;
-      return;
-   }      
-   std::string tag = mydbservice->tag(m_record);
-   unsigned int irun = iEvent.id().run();
-   std::cout << "tag : " << tag << std::endl;
-   std::cout << "run : " << irun << std::endl;
    
    // Strips detectors
    std::map< unsigned int, float > detsLAFromDB = es_SiStripLorentzAngle -> getLorentzAngles();
@@ -234,10 +231,26 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
     
       
    // SiStripLorentzAngle object
-   SiStripLorentzAngle * lorentzAngle = new SiStripLorentzAngle();
-   lorentzAngle -> putLorentsAngles(new_detsLAFromDB);
-   std::cout<<"currentTime "<<mydbservice->currentTime()<<std::endl;
-   mydbservice->writeOne(lorentzAngle,mydbservice->currentTime(),m_record,false);
+   if ( m_mode == "write" )
+      // Database services (write)
+      {
+      edm::Service<cond::service::PoolDBOutputService> mydbservice;
+      if ( ! mydbservice.isAvailable() )
+      {
+         std::cout << "Service is unavailable" << std::endl;
+         return;
+      }      
+      std::string tag = mydbservice->tag(m_record);
+      unsigned int irun = iEvent.id().run();
+      std::cout << "tag : " << tag << std::endl;
+      std::cout << "run : " << irun << std::endl;
+   
+      std::cout << "Writing to db file..." << std::endl;
+      SiStripLorentzAngle * lorentzAngle = new SiStripLorentzAngle();
+      lorentzAngle -> putLorentsAngles(new_detsLAFromDB);
+      std::cout<<"currentTime "<<mydbservice->currentTime()<<std::endl;
+      mydbservice->writeOne(lorentzAngle,mydbservice->currentTime(),m_record,false);
+   }
    
 }
 
@@ -267,6 +280,8 @@ SiStripsLorentzAnglePayload::fillDescriptions(edm::ConfigurationDescriptions& de
     desc.add<std::string>("record","SiStripsLorentzAngleRcd");
     desc.add<std::string>("tag","SiStripsLorentzAngle");
     desc.add<std::string>("label","deconvolution");
+    desc.add<std::string>("mode","write");
+    desc.add<std::string>("db","gt");
     desc.add<double>("TIB_L1a",-1000);
     desc.add<double>("TIB_L1s",-1000);
     desc.add<double>("TIB_L2a",-1000);
