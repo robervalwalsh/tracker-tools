@@ -3,10 +3,15 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("TEST")
 
 mode = 'read'
-db = 'sql'
-iov = 185189
-tag = 'SiStripsLorentzAngle'
-suffix = 'test'
+status = 'new'
+db = 'db'
+if status == 'new':
+    iov = 315974
+else:
+    iov = 157866
+mytag = 'SiStripsLorentzAngle'
+#tag = 'SiStripLorentzAngleDeco_v3_offline'
+suffix = 'Test'
 #suffix = '_Run2_2018D'
 
 process.source = cms.Source("EmptyIOVSource",
@@ -15,16 +20,17 @@ process.source = cms.Source("EmptyIOVSource",
     firstValue = cms.uint64(iov),
     interval = cms.uint64(1)
 )
+sqldb = 'sqlite_file:'+mytag+'_'+suffix+'.db'
 if mode == 'write':
-    outdb = 'sqlite_file:'+tag+'_'+suffix+'.db'
+    sqldb = 'sqlite_file:'+mytag+'_'+suffix+'.db'
     process.load("CondCore.CondDB.CondDB_cfi")
-    process.CondDB.connect = cms.string(outdb)
+    process.CondDB.connect = cms.string(sqldb)
     process.PoolDBOutputService = cms.Service("PoolDBOutputService",
         process.CondDB,
         timetype = cms.untracked.string('Run'),
         toPut = cms.VPSet(cms.PSet(
             record = cms.string('SiStripsLorentzAngleRcd'),
-            tag = cms.string(tag)
+            tag = cms.string(mytag)
         ))
     )
 
@@ -38,9 +44,10 @@ if mode == 'write' or ( mode == 'read' and db == 'gt' ):
 else:
     from  CalibTracker.Configuration.Common.PoolDBESSource_cfi import poolDBESSource
     process.conditionsInSiStripLorentzAngleRcd = poolDBESSource.clone(
-         connect = cms.string('sqlite_file:SiStripsLorentzAngle_test.db'),
+#         connect = cms.string('sqlite_file:SiStripsLorentzAngle_test.db'),
+         connect = cms.string(sqldb),
          toGet = cms.VPSet(cms.PSet(record = cms.string('SiStripLorentzAngleRcd'),
-                                   tag = cms.string('SiStripsLorentzAngle')
+                                   tag = cms.string(mytag)
                                    )
                           )
         )
@@ -52,11 +59,12 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 from Tracker.Tools.SiStripsLorentzAnglePayload_cfi import LAPayload
 process.LAPayload = LAPayload
-process.LAPayload.tag = cms.string(tag)
+process.LAPayload.tag = cms.string(mytag)
 process.LAPayload.mode = cms.string(mode)
 process.LAPayload.db = cms.string(db)
+process.LAPayload.save = cms.string('SiStripLA_'+str(iov)+'.csv')
 
-if mode == 'write':
+if mode == 'write' and status == 'new':
     process.LAPayload.TIB_L1a = cms.double(0.01958)
     process.LAPayload.TIB_L1s = cms.double(0.02261)
     process.LAPayload.TIB_L2a = cms.double(0.01997)

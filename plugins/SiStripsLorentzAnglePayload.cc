@@ -25,6 +25,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <fstream>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -81,6 +82,7 @@ class SiStripsLorentzAnglePayload : public edm::one::EDAnalyzer<>
       std::string m_label;
       std::string m_mode;
       std::string m_db;
+      std::string m_save;
       double la_tib_l1a;
       double la_tib_l1s;
       double la_tib_l2a;
@@ -119,6 +121,7 @@ SiStripsLorentzAnglePayload::SiStripsLorentzAnglePayload(const edm::ParameterSet
      m_label(iConfig.getParameter<std::string>("label")),
      m_mode(iConfig.getParameter<std::string>("mode")),
      m_db(iConfig.getParameter<std::string>("db")),
+     m_save(iConfig.getParameter<std::string>("save")),
      la_tib_l1a(iConfig.getParameter<double>("TIB_L1a")),
      la_tib_l1s(iConfig.getParameter<double>("TIB_L1s")),
      la_tib_l2a(iConfig.getParameter<double>("TIB_L2a")),
@@ -203,13 +206,21 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
       iSetup.get<SiStripLorentzAngleRcd>().get(es_SiStripLorentzAngle);
            
    
+   std::ofstream savefile;
+   if ( m_save != "" )
+      savefile.open (m_save.c_str());
    
    // Strips detectors
    std::map< unsigned int, float > detsLAFromDB = es_SiStripLorentzAngle -> getLorentzAngles();
    auto new_detsLAFromDB = detsLAFromDB;
-    
+   
    for ( auto [mod, la] : detsLAFromDB )
    {
+      if ( m_save != "" )
+      {
+         savefile << mod << "," << la << "\n";
+      }
+      
       SiStripDetId detid(mod);
       std::string subdet = subdets[detid.subDetector()];
       if ( subdet != "TIB" && subdet != "TOB" ) continue;
@@ -227,7 +238,7 @@ SiStripsLorentzAnglePayload::analyze(const edm::Event& iEvent, const edm::EventS
          std::cout << la << std::endl; 
       }
    }
-   
+   savefile.close();
     
       
    // SiStripLorentzAngle object
@@ -282,6 +293,7 @@ SiStripsLorentzAnglePayload::fillDescriptions(edm::ConfigurationDescriptions& de
     desc.add<std::string>("label","deconvolution");
     desc.add<std::string>("mode","write");
     desc.add<std::string>("db","gt");
+    desc.add<std::string>("save","");
     desc.add<double>("TIB_L1a",-1000);
     desc.add<double>("TIB_L1s",-1000);
     desc.add<double>("TIB_L2a",-1000);
